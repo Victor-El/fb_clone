@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "769028807201",
+    "firebase_url": "https://fb-clone-3b64c.firebaseio.com",
+    "project_id": "fb-clone-3b64c",
+    "storage_bucket": "fb-clone-3b64c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:769028807201:android:d2b7a514d119285f646160",
+        "android_client_info": {
+          "package_name": "com.example.fb_clone"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "769028807201-5pas0omhodbbqjf83qd7ag848l5fpl45.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTzMydrjHLlYr6n9WxtLYkkknrZf4wTpw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "769028807201-5pas0omhodbbqjf83qd7ag848l5fpl45.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
