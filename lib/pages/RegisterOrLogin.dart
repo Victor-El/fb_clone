@@ -81,6 +81,9 @@ class _RegisterOrLoginState extends State<RegisterOrLogin> {
             ],
           ));
     }).catchError((error) {
+      setState(() {
+        loginOrRegisterProgress = false;
+      });
       Scaffold.of(context).showSnackBar(
         SnackBar(
           content: Text("Sign in error: $error"),

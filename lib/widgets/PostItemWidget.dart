@@ -5,13 +5,16 @@ import 'package:flutter/painting.dart';
 import 'package:fb_clone/utils/Util.dart' as Util;
 
 class PostItemWidget extends StatelessWidget {
+  final String user;
+  final String postId;
   final String email;
   final String name;
   final Timestamp time;
   final String imageUrl;
-  final bool liked;
+  final String userEmail;
+  bool liked;
   final String postContent;
-  final List<Comment> comments;
+  final List<Map<dynamic, dynamic>> comments;
   final List<String> likes;
 
   PersistentBottomSheetController _persistentBottomSheetController;
@@ -19,12 +22,14 @@ class PostItemWidget extends StatelessWidget {
       new TextEditingController(text: "");
 
   PostItemWidget({
+    this.userEmail,
+    this.user,
+    this.postId,
     this.email,
     this.name,
     this.postContent,
     this.time,
     this.imageUrl,
-    this.liked,
     this.comments,
     this.likes,
   });
@@ -49,7 +54,7 @@ class PostItemWidget extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.all(20.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,6 +70,7 @@ class PostItemWidget extends StatelessWidget {
                 Text("${getHoursAgoFromTimestamp(time)} hours ago"),
                 Text(
                   postContent,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.black,
                     fontSize: 23.0,
@@ -87,9 +93,29 @@ class PostItemWidget extends StatelessWidget {
                   child: FlatButton.icon(
                     onPressed: () {
                       // TODO: Write like logic here
+                      Firestore.instance
+                          .collection("posts")
+                          .where("post-id", isEqualTo: postId)
+                          .getDocuments()
+                          .then((value) {
+                        value.documents.forEach((DocumentSnapshot element) {
+                          print(element.documentID);
+                          print(element.data['post-content']);
+                          var newVal = List.from(likes);
+                          likes.contains(user)
+                              ? newVal.remove(user)
+                              : newVal.add(user);
+                          element.reference
+                              .updateData({"likes": newVal}).then((value) {
+                            print("update successful");
+                          });
+                        });
+                      });
                     },
                     icon: Icon(
-                      liked ? Icons.favorite : Icons.favorite_border,
+                      likes.contains(user)
+                          ? Icons.favorite
+                          : Icons.favorite_border,
                       color: Colors.red,
                     ),
                     label: Text("${likes.length} likes"),
@@ -112,11 +138,11 @@ class PostItemWidget extends StatelessWidget {
                                         itemBuilder:
                                             (BuildContext context, int index) =>
                                                 ListTile(
-                                          title: Text(comments
-                                              .elementAt(index)
-                                              .commenterId),
-                                          subtitle: Text(
-                                              comments[index].commentContent),
+                                          title: Text(Util.getUsernameFromEmail(
+                                              comments.elementAt(
+                                                  index)['commenter-email'])),
+                                          subtitle: Text(comments[index]
+                                              ['comment-content']),
                                         ),
                                         itemCount: comments.length,
                                       ),
@@ -142,10 +168,37 @@ class PostItemWidget extends StatelessWidget {
                                             child: IconButton(
                                           icon: Transform.rotate(
                                             angle: -45,
-                                            child: Icon(Icons.send),
+                                            child: Icon(Icons.send, color: Colors.blue,),
                                           ),
                                           onPressed: () {
                                             // TODO: write logic to add comment
+                                            Firestore.instance
+                                                .collection("posts")
+                                                .where("post-id",
+                                                    isEqualTo: postId)
+                                                .getDocuments()
+                                                .then((QuerySnapshot value) {
+                                              value.documents.forEach(
+                                                  (DocumentSnapshot element) {
+                                                var newCommentList = List<
+                                                        Map<dynamic,
+                                                            dynamic>>.from(
+                                                    comments);
+                                                newCommentList.add(Comment(
+                                                        commenterId: userEmail,
+                                                        commentContent:
+                                                            _commentController
+                                                                .text)
+                                                    .toMap());
+                                                element.reference.updateData({
+                                                  "comments": newCommentList
+                                                }).then((value) {
+                                                  print(
+                                                      "Commented successfully");
+                                                });
+                                              });
+                                            });
+
                                             _persistentBottomSheetController
                                                 .close();
                                           },

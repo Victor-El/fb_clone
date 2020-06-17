@@ -57,6 +57,8 @@ class _AddPostState extends State<AddPost> {
   Future<void> uploadPost() async {
     print("Starting to upload post");
     Post post = new Post.construct(
+      postId: Uuid().v1(),
+      email: _firebaseUser.email,
       id: _firebaseUser.uid,
       imageUrl: imageDownloadUrl,
       postContent: postController.text,
@@ -235,10 +237,10 @@ class _AddPostState extends State<AddPost> {
                 uploadingPost
                     ? Center(
                         child: SizedBox(
-                          width: 10,
-                          height: 100,
+                          width: 50,
+                          height: 50,
                           child: CircularProgressIndicator(
-                            strokeWidth: 10.0,
+                            strokeWidth: 5.0,
                           ),
                         ),
                       )

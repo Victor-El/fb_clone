@@ -5,6 +5,7 @@ import 'package:fb_clone/widgets/PostItemWidget.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:uuid/uuid.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -15,37 +16,46 @@ class _HomeState extends State<Home> {
   List<Post> posts;
   FirebaseUser user;
   FocusNode focusNode;
+  CollectionReference postCollectionReference;
+  String stringUserId;
+  String userEmail;
+
+  Future<void> getCurrentUser() async {
+    user = await FirebaseAuth.instance.currentUser();
+    stringUserId = user.uid;
+    userEmail = user.email;
+  }
 
   @override
   void initState() {
+    postCollectionReference = Firestore.instance.collection("posts");
     focusNode = FocusNode();
     user = null;
-    posts = <Post>[];
-    Post post1 = new Post.construct(
-      email: "victorelezua@gmail.com",
-      id: "1",
-      imageUrl: "https://image.com",
-      postContent: "Hello fam, Such a nice day",
-      timestamp: Timestamp.now(),
-      comments: [new Comment(commentContent: "Nice one", commenterId: "Abig")],
-      likes: ["ikdfog84t8jfg-tmrn8t", "jhdfyo783rjehf8-kf84mf-mkt408"],
-    );
-    posts.add(post1);
+    stringUserId = null;
+    userEmail = null;
+    getCurrentUser();
+//    posts = <Post>[];
+//    Post post1 = new Post.construct(
+//      postId: Uuid().v1(),
+//      email: "victorelezua@gmail.com",
+//      id: "1",
+//      imageUrl: "https://image.com",
+//      postContent: "Hello fam, Such a nice day",
+//      timestamp: Timestamp.now(),
+//      comments: [new Comment(commentContent: "Nice one", commenterId: "Abig")],
+//      likes: ["ikdfog84t8jfg-tmrn8t", "jhdfyo783rjehf8-kf84mf-mkt408"],
+//    );
+//    posts.add(post1);
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    Map<String, dynamic> argsMap =
-    ModalRoute
-        .of(context)
-        .settings
-        .arguments as Map<String, dynamic>;
-    user = argsMap["firebase-user"] as FirebaseUser;
     return WillPopScope(
       onWillPop: () async {
-        Navigator.canPop(context) ? Navigator.pop(context) : SystemNavigator
-            .pop(animated: true);
+        Navigator.canPop(context)
+            ? Navigator.pop(context)
+            : SystemNavigator.pop(animated: true);
         return false;
       },
       child: Scaffold(
@@ -65,19 +75,41 @@ class _HomeState extends State<Home> {
                         fontSize: 25.0,
                       ),
                     ),
-                    Container(
-                      padding: EdgeInsets.all(10.0),
-                      child: Text(
-                        "Clone Mode",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18.0,
+                    Row(
+                      children: <Widget>[
+                        Container(
+                          padding: EdgeInsets.all(10.0),
+                          child: Text(
+                            "Clone Mode",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18.0,
+                            ),
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blueGrey.shade800,
+                            borderRadius: BorderRadius.circular(15.0),
+                          ),
                         ),
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blueGrey.shade800,
-                        borderRadius: BorderRadius.circular(15.0),
-                      ),
+                        PopupMenuButton(
+                          itemBuilder: (BuildContext context) {
+                            List<String> popupStrings = ["Sign Out"];
+                            return popupStrings
+                                .map((e) => PopupMenuItem(
+                                      child: Text(e),
+                                      value: e,
+                                    ))
+                                .toList();
+                          },
+                          onSelected: (selected) {
+                            selected == "Sign Out"
+                                ? FirebaseAuth.instance.signOut().then(
+                                    (value) => Navigator.pushReplacementNamed(
+                                        context, "/login-register"))
+                                : null;
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -110,23 +142,37 @@ class _HomeState extends State<Home> {
                   ),
                 ),
                 Expanded(
-                  child: ListView(
-                    shrinkWrap: true,
-                    semanticChildCount: 1,
-                    children: <Widget>[
-                      PostItemWidget(
-                        liked: posts[0].likes.contains(user.uid),
-                        likes: posts[0].likes,
-                        time: Timestamp.now(),
-                        postContent: posts[0].postContent,
-                        comments: posts[0].comments,
-                        imageUrl:
-                        "https://guardian.ng/wp-content/uploads/2019/05/Victor-AD.jpg",
-                        name: posts[0].id,
-                        email: posts[0].email,
-                      ),
-                    ],
-                  ),
+                  child: StreamBuilder<QuerySnapshot>(
+                      stream: postCollectionReference.snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          return Text("Something went wrong");
+                        } else if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Text("Waiting ...");
+                        } else {
+                          return ListView(
+                            shrinkWrap: true,
+                            semanticChildCount: 1,
+                            children: snapshot.data.documents
+                                .map((DocumentSnapshot e) => PostItemWidget(
+                                      userEmail: userEmail,
+                                      user: stringUserId,
+                                      postId: e['post-id'],
+                                      email: e['email'],
+                                      name: e['user-id'],
+                                      postContent: e['post-content'],
+                                      imageUrl: e['image-url'],
+                                      time: e['timestamp'],
+                                      comments:
+                                          List<Map<dynamic, dynamic>>.from(
+                                              e['comments']),
+                                      likes: List<String>.from(e['likes']),
+                                    ))
+                                .toList(),
+                          );
+                        }
+                      }),
                 ),
               ],
             ),

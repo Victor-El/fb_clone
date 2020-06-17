@@ -3,6 +3,7 @@ import 'package:fb_clone/models/Comment.dart';
 import 'package:flutter/material.dart';
 
 class Post {
+  String postId;
   String email;
   String id;
   String imageUrl;
@@ -14,10 +15,11 @@ class Post {
   static const List<Comment> sComments = <Comment>[];
   static const List<String> sLikes = <String>[];
 
-  Post(this.email, this.id, this.imageUrl, this.postContent, this.timestamp, this.likes,
+  Post(this.postId, this.email, this.id, this.imageUrl, this.postContent, this.timestamp, this.likes,
       this.comments);
 
   Post.construct({
+    @required this.postId,
     @required this.email,
     @required this.id,
     @required this.imageUrl,
@@ -28,6 +30,7 @@ class Post {
   });
 
   Post.fromMap(Map<String, dynamic> postMap) {
+    this.postId = postMap['post-id'];
     this.id = postMap['user-id'];
     this.imageUrl = postMap['image-url'];
     this.postContent = postMap['post-content'];
@@ -37,6 +40,8 @@ class Post {
   }
 
   Map<String, dynamic> toMap() => {
+        "post-id": this.postId,
+        "email": this.email,
         "user-id": this.id,
         "image-url": this.imageUrl,
         "post-content": this.postContent,
